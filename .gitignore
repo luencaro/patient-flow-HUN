@@ -1,0 +1,27 @@
+# Datos: NUNCA al repo (solo se conserva la estructura)
+data/**
+!data/**/
+!data/**/.gitkeep
+*.csv
+*.parquet
+*.xlsx
+*.duckdb
+
+# Credenciales
+.env
+
+# Python
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# Power BI
+*.pbix
+.pbi/cache.abf
+**/.pbi/localSettings.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+docs/_build/
