@@ -62,6 +62,7 @@ def suprimir_pequenos(
     minimo: int = MIN_CELDA,
     columnas_derivadas: list | None = None,
     dependencias: dict | None = None,
+    conservar_ceros: bool = False,
 ) -> pd.DataFrame:
     """Devuelve una copia con los conteos menores a ``minimo`` reemplazados por ``"<minimo>"``.
 
@@ -82,6 +83,9 @@ def suprimir_pequenos(
     dependencias:
         Diccionario ``{columna_derivada: [conteos]}`` que reemplaza la inferencia
         por nombres.
+    conservar_ceros:
+        Si es ``True``, los conteos iguales a 0 se muestran tal cual (un cero no
+        identifica a nadie). Útil en tablas de calidad (p. ej., número de nulos).
     """
     verificar_agregada(tabla)
     if isinstance(columnas_conteo, str):
@@ -103,6 +107,8 @@ def suprimir_pequenos(
     salida = tabla.copy()
     conteos = tabla[columnas_conteo].apply(pd.to_numeric, errors="coerce")
     pequenos = conteos.lt(minimo)  # los nulos no se marcan
+    if conservar_ceros:
+        pequenos &= conteos.ne(0)
     etiqueta = f"<{minimo}"
 
     for columna in columnas_derivadas:

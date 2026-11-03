@@ -1,5 +1,5 @@
 -- Minutos entre el inicio de cada etapa y la llegada (visit_start_datetime), en visitas de urgencias.
--- Valores negativos: la etapa empieza antes de la llegada. Desplazada (D2): más de 60 min antes.
+-- Valores negativos: la etapa empieza antes de la llegada. Evento previo (D2): más de 60 min antes.
 WITH d AS (
     SELECT
         d.visit_detail_concept_id AS concepto_etapa,
@@ -15,8 +15,8 @@ SELECT
     COUNT(*)                                                           AS n,
     COUNT(*) FILTER (WHERE d.minutos = 0)                              AS n_igual_llegada,
     100.0 * COUNT(*) FILTER (WHERE d.minutos = 0) / COUNT(*)           AS pct_igual_llegada,
-    COUNT(*) FILTER (WHERE d.minutos < -60)                            AS n_desplazadas,
-    100.0 * COUNT(*) FILTER (WHERE d.minutos < -60) / COUNT(*)         AS pct_desplazadas,
+    COUNT(*) FILTER (WHERE d.minutos < -60)                            AS n_eventos_previos,
+    100.0 * COUNT(*) FILTER (WHERE d.minutos < -60) / COUNT(*)         AS pct_eventos_previos,
     percentile_cont(0.01) WITHIN GROUP (ORDER BY d.minutos)            AS p01_min,
     percentile_cont(0.05) WITHIN GROUP (ORDER BY d.minutos)            AS p05_min,
     percentile_cont(0.10) WITHIN GROUP (ORDER BY d.minutos)            AS p10_min,

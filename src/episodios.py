@@ -1,12 +1,18 @@
-"""Construcción de episodios de urgencias a partir de visitas (decisiones D1–D8)."""
+"""Construcción de episodios de urgencias a partir de visitas (decisiones D1–D11)."""
 
 import numpy as np
 import pandas as pd
 
 from .config import (
+    ANIO_NACIMIENTO_MINIMO,
     CONTACTO_BREVE,
+    EDAD_MAXIMA,
+    FECHA_CORTE_ANALISIS,
+    FECHA_INICIO_ANALISIS,
     GRUPOS,
+    GRUPOS_TIEMPOS,
     UMBRAL_FUSION_MIN,
+    UMBRAL_OPERATIVO_H,
     UMBRALES_LOS_H,
     VENTANAS_RECONSULTA,
 )
@@ -21,19 +27,21 @@ COLUMNAS_VISITA = (
     "fin_piso",
     "hosp",
     "tiene_9203",
+    "n_etapas",
     "n_segmentos",
-    "n_desplazados",
+    "n_eventos_previos",
+    "hosp_previa_30d",
+    "nota_consulta_urg",
     "year_of_birth",
     "sexo",
 )
 COLUMNAS_FECHA = ("llegada", "fin", "fin_urg", "inicio_piso", "fin_piso")
-COLUMNAS_BOOL = ("hosp", "tiene_9203")
-COLUMNAS_ENTERAS = ("n_segmentos", "n_desplazados")
+COLUMNAS_BOOL = ("hosp", "tiene_9203", "hosp_previa_30d", "nota_consulta_urg")
+COLUMNAS_ENTERAS = ("n_etapas", "n_segmentos", "n_eventos_previos")
 
-EDAD_MAXIMA = 110
 MAPA_SEXO = {"FEMALE": "femenino", "MALE": "masculino"}
 
-G1, G2, G3, G4 = GRUPOS
+G1, G2, G3 = GRUPOS
 
 
 def _horas(delta: pd.Series) -> pd.Series:
@@ -42,11 +50,14 @@ def _horas(delta: pd.Series) -> pd.Series:
 
 
 def preparar_visitas(df: pd.DataFrame) -> pd.DataFrame:
-    """Ajusta tipos y calcula edad (D8), estado de la edad y grupo etario.
+    """Ajusta tipos, rellena los fines de las visitas sin etapas (D10) y calcula la edad (D8).
 
     - Fechas a ``datetime64`` (sin zona horaria), booleanos y enteros.
-    - ``edad`` = año de llegada − ``year_of_birth``; valores < 0 o > 110 quedan ``NaN``.
-    - ``estado_edad``: ``valida``, ``negativa``, ``mayor_110`` o ``sin_dato``.
+    - ``sin_etapas``: la visita no tiene ninguna etapa que no sea evento previo (D10).
+      ``fin`` y ``fin_urg`` nulos se rellenan con ``llegada``.
+    - ``edad`` = año de llegada − ``year_of_birth``. Queda ``NaN`` si ``year_of_birth`` es
+      menor a 1900, o si la edad es negativa o mayor a 110.
+    - ``estado_edad``: ``valida``, ``sin_dato``, ``anio_invalido``, ``negativa`` o ``mayor_110``.
     - ``grupo_etario``: ``pediatria`` (< 18), ``adulto`` (18–64), ``adulto_mayor`` (≥ 65)
       o ``sin_dato``.
     - ``sexo``: ``femenino``, ``masculino`` u ``otro_o_sin_dato``.
@@ -68,10 +79,20 @@ def preparar_visitas(df: pd.DataFrame) -> pd.DataFrame:
     v["person_id"] = v["person_id"].astype("int64")
     v["year_of_birth"] = pd.to_numeric(v["year_of_birth"], errors="coerce")
 
+    # D10: visitas sin etapas (o solo con eventos previos) terminan en su llegada.
+    v["sin_etapas"] = v["n_etapas"].eq(0)
+    v["fin"] = v["fin"].fillna(v["llegada"])
+    v["fin_urg"] = v["fin_urg"].fillna(v["llegada"])
+
     edad_bruta = v["llegada"].dt.year - v["year_of_birth"]
     v["estado_edad"] = np.select(
-        [edad_bruta.isna(), edad_bruta < 0, edad_bruta > EDAD_MAXIMA],
-        ["sin_dato", "negativa", "mayor_110"],
+        [
+            v["year_of_birth"].isna(),
+            v["year_of_birth"] < ANIO_NACIMIENTO_MINIMO,
+            edad_bruta < 0,
+            edad_bruta > EDAD_MAXIMA,
+        ],
+        ["sin_dato", "anio_invalido", "negativa", "mayor_110"],
         default="valida",
     )
     v["edad"] = edad_bruta.where(v["estado_edad"] == "valida").astype(float)
@@ -104,7 +125,7 @@ def fusionar_episodios(visitas: pd.DataFrame, umbral_min: int = UMBRAL_FUSION_MI
 
     Una visita abre un episodio nuevo si es la primera del paciente o si su llegada
     es posterior a (máximo fin acumulado de las anteriores + umbral). Para el fin
-    de cada visita se usa ``fin`` y, si falta o es anterior a la llegada, la llegada
+    de cada visita se usa ``fin`` y, si es anterior a la llegada, la llegada
     (``fin_ref``). Es vectorizada: no recorre pacientes con bucles.
 
     Devuelve un episodio por fila con ``episodio_id`` (entero interno, nunca se muestra).
@@ -137,8 +158,12 @@ def fusionar_episodios(visitas: pd.DataFrame, umbral_min: int = UMBRAL_FUSION_MI
         fin_piso=("fin_piso", "max"),
         hosp=("hosp", "any"),
         tiene_9203=("tiene_9203", "any"),
+        hosp_previa_30d=("hosp_previa_30d", "any"),
+        nota_consulta_urg=("nota_consulta_urg", "any"),
+        sin_etapas=("sin_etapas", "all"),
+        n_etapas=("n_etapas", "sum"),
         n_segmentos=("n_segmentos", "sum"),
-        n_desplazados=("n_desplazados", "sum"),
+        n_eventos_previos=("n_eventos_previos", "sum"),
         n_visitas=("visit_occurrence_id", "count"),
         edad=("edad", "first"),
         grupo_etario=("grupo_etario", "first"),
@@ -150,41 +175,55 @@ def fusionar_episodios(visitas: pd.DataFrame, umbral_min: int = UMBRAL_FUSION_MI
 def asignar_grupo(ep: pd.DataFrame) -> pd.DataFrame:
     """Agrega la columna ``grupo`` (D6), evaluada en este orden:
 
-    1. ``1_contacto_breve``: no hospitalizado y ``fin_urg − llegada < 5 min``.
-    2. ``2_no_hosp_atencion``: no hospitalizado y ≥ 5 min (o sin ``fin_urg``).
-    3. ``3_hosp_con_hora_piso``: hospitalizado con ``inicio_piso ≥ llegada``.
-    4. ``4_hosp_sin_hora_piso``: el resto de hospitalizados.
+    1. ``1_contacto_breve``: sin ninguna etapa no previa, o no hospitalizado y
+       ``fin_urg − llegada < 5 min``.
+    2. ``2_atencion_urgencias``: no hospitalizado y ≥ 5 min.
+    3. ``3_hospitalizado``: tiene al menos un 9201 que no es evento previo (D3).
     """
     e = ep.copy()
     no_hosp = ~e["hosp"]
     duracion_urg = e["fin_urg"] - e["llegada"]
     condiciones = [
-        no_hosp & (duracion_urg < CONTACTO_BREVE),
+        e["sin_etapas"] | (no_hosp & (duracion_urg < CONTACTO_BREVE)),
         no_hosp,
-        e["hosp"] & e["inicio_piso"].notna() & (e["inicio_piso"] >= e["llegada"]),
     ]
-    e["grupo"] = np.select(condiciones, [G1, G2, G3], default=G4)
+    e["grupo"] = np.select(condiciones, [G1, G2], default=G3)
     return e
 
 
 def calcular_los(ep: pd.DataFrame, umbrales: list = UMBRALES_LOS_H) -> pd.DataFrame:
-    """Agrega ``los_h`` (D5) y columnas ``los_mas_{u}h`` (booleano nulable) por umbral.
+    """Agrega ``los_h`` (D5), ``los_recortado`` y columnas ``los_mas_{u}h`` por umbral.
 
-    - Grupo 3: ``inicio_piso − llegada``.
-    - Grupos 1 y 2: ``fin_urg − llegada``.
-    - Grupo 4: ``NaN``.
+    - Grupo 3: ``inicio_piso − llegada``. Si ``inicio_piso`` es anterior a la llegada
+      (dentro de la tolerancia de 1 h de D2), el LOS se recorta a 0 y
+      ``los_recortado`` queda en ``True`` (D3).
+    - Grupos 1 y 2: ``fin_urg − llegada``. Los tiempos del grupo 1 no se analizan.
+
+    Las columnas ``los_mas_{u}h`` son booleanas nulables y solo tienen valor en los
+    grupos 2 y 3.
     """
     e = ep.copy()
     los_piso = _horas(e["inicio_piso"] - e["llegada"])
     los_urg = _horas(e["fin_urg"] - e["llegada"])
-    e["los_h"] = np.where(
-        e["grupo"].eq(G3),
-        los_piso,
-        np.where(e["grupo"].isin([G1, G2]), los_urg, np.nan),
-    )
+    es_g3 = e["grupo"].eq(G3)
+
+    e["los_recortado"] = es_g3 & los_piso.lt(0)
+    e["los_h"] = np.where(es_g3, los_piso.clip(lower=0), los_urg)
+    con_tiempos = e["grupo"].isin(list(GRUPOS_TIEMPOS)) & e["los_h"].notna()
     for umbral in umbrales:
-        e[f"los_mas_{umbral}h"] = (e["los_h"] > umbral).astype("boolean").mask(e["los_h"].isna())
+        e[f"los_mas_{umbral}h"] = (e["los_h"] > umbral).astype("boolean").where(con_tiempos)
     return e
+
+
+def contar_los_recortados(ep: pd.DataFrame) -> pd.DataFrame:
+    """Tabla agregada: episodios del grupo 3 y cuántos tienen el LOS recortado a 0 (D3)."""
+    g3 = ep[ep["grupo"].eq(G3)]
+    tabla = pd.DataFrame(
+        {"n": [len(g3)], "n_recortados": [int(g3["los_recortado"].sum())]},
+        index=pd.Index([G3], name="grupo"),
+    )
+    tabla["pct_recortados"] = 100 * tabla["n_recortados"] / tabla["n"]
+    return tabla
 
 
 def calcular_reconsultas(
@@ -220,47 +259,65 @@ def calcular_reconsultas(
     return e
 
 
+def marcar_poblacion(ep: pd.DataFrame) -> pd.DataFrame:
+    """Agrega ``en_poblacion``: llegada entre ``FECHA_INICIO_ANALISIS`` y ``FECHA_CORTE_ANALISIS`` (D9)."""
+    e = ep.copy()
+    e["en_poblacion"] = e["llegada"].between(FECHA_INICIO_ANALISIS, FECHA_CORTE_ANALISIS)
+    return e
+
+
 def construir_episodios(visitas: pd.DataFrame, umbral_min: int = UMBRAL_FUSION_MIN) -> pd.DataFrame:
-    """Fusiona, asigna grupos y calcula LOS y reconsultas. ``visitas`` debe venir de ``preparar_visitas``."""
-    faltantes = {"edad", "grupo_etario", "sexo", "estado_edad"} - set(visitas.columns)
+    """Fusiona, asigna grupos y calcula LOS, reconsultas y ``en_poblacion``.
+
+    Devuelve todos los episodios (también los posteriores al corte, que sirven
+    como episodio siguiente en las reconsultas). ``visitas`` debe venir de
+    ``preparar_visitas``.
+    """
+    faltantes = {"edad", "grupo_etario", "sexo", "estado_edad", "sin_etapas"} - set(visitas.columns)
     if faltantes:
         raise ValueError("Primero aplica preparar_visitas() a las visitas.")
     ep = fusionar_episodios(visitas, umbral_min)
     ep = asignar_grupo(ep)
     ep = calcular_los(ep)
     ep = calcular_reconsultas(ep, fecha_fin_datos=visitas["llegada"].max())
+    ep = marcar_poblacion(ep)
     return ep
 
 
 def valores_comparables(ep: pd.DataFrame) -> dict:
-    """Métricas con la misma definición que los valores de referencia de SQL (ver config)."""
-    hosp = ep["hosp"]
+    """Métricas con la misma forma que la referencia de DBeaver (ver ``config.REFERENCIA_SQL_60MIN``).
+
+    Para acercarse a la definición de la referencia se usan todos los episodios
+    (sin corte temporal) excepto los que no tienen ninguna etapa. Las reglas no son
+    idénticas (D3, D10), así que la comparación es solo informativa.
+    """
+    e = ep[~ep["sin_etapas"]]
+    g2 = e.loc[e["grupo"].eq(G2), "los_h"]
+    g3 = e.loc[e["grupo"].eq(G3), "los_h"]
     return {
-        "episodios": int(len(ep)),
-        "no_hospitalizados": int((~hosp).sum()),
-        "hospitalizados": int(hosp.sum()),
-        "hosp_sin_hora_piso": int((hosp & ep["inicio_piso"].isna()).sum()),
-        "hosp_con_hora_piso_valida": int(ep["grupo"].eq(G3).sum()),
-        "pct_reconsulta_72h_no_hosp_sin_censura": float(
-            100 * ep.loc[~hosp, "reconsulta_72h_sin_censura"].mean()
-        ),
-        "pct_reconsulta_72h_hosp_sin_censura": float(
-            100 * ep.loc[hosp, "reconsulta_72h_sin_censura"].mean()
-        ),
+        "episodios": int(len(e)),
+        "hosp_con_hora_piso": int(e["grupo"].eq(G3).sum()),
+        "mediana_los_hosp_h": float(g3.median()),
+        "pct_mas_12h_hosp": float(100 * g3.gt(12).mean()),
+        "pct_mas_24h_hosp": float(100 * g3.gt(24).mean()),
+        "mediana_los_atencion_h": float(g2.median()),
+        "pct_mas_12h_atencion": float(100 * g2.gt(12).mean()),
+        "pct_reconsulta_72h": float(100 * e["reconsulta_72h_sin_censura"].mean()),
     }
 
 
 def resumen_sensibilidad(visitas: pd.DataFrame, umbrales: list) -> pd.DataFrame:
-    """Métricas clave de los episodios para cada umbral de fusión (una fila por umbral).
+    """Métricas clave de los episodios de la población (D9) para cada umbral de fusión.
 
-    Incluye episodios, % hospitalizados, % con más de una visita, máximo de visitas
-    por episodio, tamaño de cada grupo, mediana y % > 12 h del grupo 3, y
-    reconsulta a 72 h sin y con censura. Solo contiene agregados.
+    Una fila por umbral: episodios, % hospitalizados, % con más de una visita,
+    máximo de visitas por episodio, tamaño de cada uno de los tres grupos, mediana
+    y % > 12 h de los grupos 2 y 3, y reconsulta a 72 h sin y con censura. Solo
+    contiene agregados.
     """
     filas = []
     for umbral in umbrales:
         ep = construir_episodios(visitas, umbral)
-        g3 = ep[ep["grupo"].eq(G3)]
+        ep = ep[ep["en_poblacion"]]
         tamanos = ep["grupo"].value_counts()
         fila = {
             "umbral_min": umbral,
@@ -271,8 +328,10 @@ def resumen_sensibilidad(visitas: pd.DataFrame, umbrales: list) -> pd.DataFrame:
         }
         for grupo in GRUPOS:
             fila[f"n_{grupo}"] = int(tamanos.get(grupo, 0))
-        fila["mediana_los_g3_h"] = g3["los_h"].median()
-        fila["pct_mas_12h_g3"] = 100 * g3["los_mas_12h"].mean()
+        for grupo, sufijo in [(G2, "g2"), (G3, "g3")]:
+            los = ep.loc[ep["grupo"].eq(grupo), "los_h"]
+            fila[f"mediana_los_{sufijo}_h"] = los.median()
+            fila[f"pct_mas_{UMBRAL_OPERATIVO_H}h_{sufijo}"] = 100 * los.gt(UMBRAL_OPERATIVO_H).mean()
         fila["pct_reconsulta_72h_sin_censura"] = 100 * ep["reconsulta_72h_sin_censura"].mean()
         fila["pct_reconsulta_72h_con_censura"] = 100 * ep["reconsulta_72h"].mean()
         filas.append(fila)

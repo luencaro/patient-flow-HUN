@@ -98,17 +98,30 @@ def hash_sql(nombre: str) -> str:
 def consultar(nombre: str, refrescar: bool = False) -> pd.DataFrame:
     """Devuelve el resultado de ``sql/{nombre}.sql`` usando caché en ``data/raw/{nombre}.parquet``.
 
-    - Si el parquet existe y ``refrescar=False``, se lee sin consultar la base.
-    - ``DATA_MODE=remote``: ejecuta la consulta, guarda el parquet y lo devuelve.
-    - ``DATA_MODE=local``: solo lee el parquet; si no existe, lanza un error.
+    - Junto al parquet se guarda ``{nombre}.sha256`` con el hash del archivo SQL. La caché
+      solo es vigente si ese hash coincide con el SQL actual: si el SQL cambió (o la caché
+      es de una versión que no guardaba el hash), se considera vieja.
+    - Si la caché es vigente y ``refrescar=False``, se lee sin consultar la base.
+    - ``DATA_MODE=remote``: ejecuta la consulta, guarda el parquet y el hash, y lo devuelve.
+    - ``DATA_MODE=local``: solo lee el parquet (con una advertencia si está viejo); si no
+      existe, lanza un error.
     """
     ruta_cache = DATA_RAW / f"{nombre}.parquet"
-    if ruta_cache.exists() and not refrescar:
+    ruta_hash = DATA_RAW / f"{nombre}.sha256"
+    hash_actual = hash_sql(nombre)
+    vigente = (
+        ruta_cache.exists() and ruta_hash.exists() and ruta_hash.read_text(encoding="utf-8").strip() == hash_actual
+    )
+    if vigente and not refrescar:
         return pd.read_parquet(ruta_cache)
 
     if modo_datos() == "local":
         if ruta_cache.exists():
-            warnings.warn("refrescar=True se ignora en modo local; se usa el parquet existente.")
+            motivo = "refrescar=True se ignora en modo local" if vigente else (
+                f"sql/{nombre}.sql cambió desde que se generó la caché"
+            )
+            warnings.warn(f"{motivo}; se usa data/raw/{nombre}.parquet tal como está. "
+                          "Ejecuta con DATA_MODE=remote para actualizarlo.")
             return pd.read_parquet(ruta_cache)
         raise FileNotFoundError(
             f"No existe data/raw/{nombre}.parquet. Ejecuta primero con DATA_MODE=remote "
@@ -122,4 +135,5 @@ def consultar(nombre: str, refrescar: bool = False) -> pd.DataFrame:
 
     ruta_cache.parent.mkdir(parents=True, exist_ok=True)
     resultado.to_parquet(ruta_cache, index=False)
+    ruta_hash.write_text(hash_actual, encoding="utf-8")
     return resultado
