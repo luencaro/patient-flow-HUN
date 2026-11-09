@@ -122,30 +122,38 @@ def aplicar_estilo() -> None:
 
 # --- Formato de números en tablas ---------------------------------------------------------
 _COLUMNAS_SIN_MILES = ("concepto", "anio", "hora", "dia", "posicion", "rango", "edad", "banda", "umbral")
+_COLUMNAS_EFECTO = ("smd", "ks_d", "v_cramer", "wasserstein")
 
 
 def formatear_tabla(tabla: pd.DataFrame) -> pd.DataFrame:
     """Copia de la tabla con los números como texto en formato colombiano (solo para mostrar).
 
-    Enteros sin decimales; columnas ``pct_*`` e ``ic_*`` con un decimal; el resto de
-    decimales con dos. Las columnas de códigos o años (``concepto``, ``anio``, ``hora``...)
-    no llevan separador de miles. No se usa para exportar.
+    Enteros sin decimales; columnas ``pct_*`` e ``ic_*`` con un decimal; tamaños de efecto
+    (``smd``, ``ks_d``, ``v_cramer``, ``wasserstein``) con tres; valores p (``*_p``) con tres o
+    «< 0,001»; el resto de decimales con dos. Nunca notación científica. Las columnas de códigos o
+    años (``concepto``, ``anio``, ``hora``...) no llevan separador de miles. No se usa para exportar.
     """
     if not isinstance(tabla, pd.DataFrame):
         return tabla
     salida = tabla.copy()
     for columna in salida.columns:
         nombre = str(columna)
-        if nombre.startswith(_COLUMNAS_SIN_MILES):
-            continue
-        decimales = 1 if nombre.startswith(("pct", "ic_")) else 2
+        sin_miles = nombre.startswith(_COLUMNAS_SIN_MILES)
+        es_pct = nombre.startswith(("pct", "ic_"))
+        es_p = nombre.endswith("_p")
+        decimales = 1 if es_pct else 3 if (es_p or nombre in _COLUMNAS_EFECTO) else 2
 
-        def _formato(v, decimales=decimales):
+        def _formato(v, decimales=decimales, sin_miles=sin_miles, es_pct=es_pct, es_p=es_p):
             if isinstance(v, (bool, np.bool_)) or not isinstance(v, (int, float, np.integer, np.floating)):
                 return v
             if pd.isna(v):
                 return v
-            return fmt_entero(v) if float(v).is_integer() and not nombre.startswith(("pct", "ic_")) else estilo.fmt_decimal(v, decimales)
+            if es_p and 0 <= v < 0.001:
+                return "< 0,001"
+            if sin_miles:
+                x = float(v)
+                return f"{x:.0f}" if x.is_integer() else f"{x:.{decimales}f}".replace(".", ",")
+            return fmt_entero(v) if float(v).is_integer() and not es_pct else estilo.fmt_decimal(v, decimales)
 
         salida[columna] = salida[columna].map(_formato)
     return salida
@@ -271,6 +279,27 @@ def etiquetas_directas(ax: plt.Axes, x, series: dict, negrita=()) -> None:
     """
     for texto, (valores, color) in series.items():
         etiquetar_final(ax, x, valores, texto, color=color, negrita=texto in negrita)
+
+
+def linea_con_ocultos(ax: plt.Axes, x, valores, conteos, color: str, etiqueta: str = "") -> None:
+    """Serie con los puntos de conteo pequeño ocultos pero visibles como ausencia de valor.
+
+    Los puntos con ``0 < conteo < MIN_CELDA`` no se dibujan en la línea: se marcan con un marcador
+    hueco en la base del eje y, en la leyenda, «Meses con menos de 10 casos (valor oculto)». Los
+    puntos con conteo 0 sí se dibujan (un cero no identifica a nadie).
+    """
+    x = pd.Index(x)
+    valores = pd.Series(np.asarray(valores, dtype=float), index=x)
+    conteos = pd.Series(np.asarray(conteos, dtype=float), index=x)
+    ocultos = conteos.gt(0) & conteos.lt(MIN_CELDA)
+    ax.plot(x, valores.where(~ocultos), marker="o", markersize=3, color=color, label=etiqueta or None)
+    if ocultos.any():
+        y_base = ax.get_ylim()[0] if ax.get_yscale() == "log" else 0
+        ax.plot(x[ocultos.to_numpy()], [y_base] * int(ocultos.sum()), linestyle="none", marker="o", markersize=6,
+                markerfacecolor=FONDO, markeredgecolor=color, markeredgewidth=1.2, clip_on=False,
+                label=f"Meses con menos de {MIN_CELDA} casos (valor oculto)")
+    if ax.get_legend_handles_labels()[0]:
+        leyenda_fuera(ax, "debajo", ncol=2)
 
 
 def rotular_barras(ax: plt.Axes, barras, valores, formato=fmt_numero, alturas=None, horizontal: bool = False) -> None:

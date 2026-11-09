@@ -1,6 +1,6 @@
 -- Duración de las visitas de urgencias no hospitalizadas (fin_urg - llegada), en tramos, para ver el corte
--- de 5 minutos de los contactos breves (D6). Incluye las visitas sin etapas no previas (D10) y, aparte,
--- las hospitalizadas (D3).
+-- de 5 minutos de los contactos breves (grupos de análisis). Incluye las visitas sin etapas no previas y, aparte,
+-- las hospitalizadas (definición de hospitalizado).
 WITH d AS (
     SELECT
         d.visit_occurrence_id,

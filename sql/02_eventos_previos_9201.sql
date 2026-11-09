@@ -3,7 +3,7 @@
 -- categoria: 'termina_antes' si la etapa termina antes de la llegada; 'sigue_abierta' si termina en o
 --   después de la llegada, o no tiene fin.
 -- dias_fin_a_llegada: días entre el fin de la etapa y la llegada (solo tiene sentido en 'termina_antes').
--- n_fin_30d: etapas cuyo fin está en los 30 días antes de la llegada (definición de hosp_previa_30d, D11).
+-- n_fin_30d: etapas cuyo fin está en los 30 días antes de la llegada (definición de hosp_previa_30d).
 -- n_visita_cerca: el mismo paciente tiene OTRA visita (de cualquier tipo) que empieza a +/- 24 h del inicio
 --   de la etapa. Se calcula con un JOIN contra un conjunto pre-agregado, no con un EXISTS correlacionado.
 WITH previos AS (

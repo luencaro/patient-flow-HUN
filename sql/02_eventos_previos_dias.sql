@@ -1,5 +1,5 @@
 -- Días entre el inicio de cada evento previo y la llegada, por tipo de etapa, en visitas de urgencias.
--- Evento previo (D2): etapa que empieza más de 1 hora antes de la llegada. El hospital confirmó que las
+-- Evento previo: etapa que empieza más de 1 hora antes de la llegada. El hospital confirmó que las
 -- fechas no están corridas: son eventos previos asociados a la visita.
 -- dias_antes_llegada = FLOOR((llegada - inicio de la etapa) en días).
 SELECT

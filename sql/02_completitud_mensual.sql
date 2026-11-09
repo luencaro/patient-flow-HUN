@@ -1,7 +1,7 @@
--- Completitud mensual de las visitas de urgencias (9203), por mes de llegada (D9, D10).
+-- Completitud mensual de las visitas de urgencias (9203), por mes de llegada (población de análisis y visitas sin etapas).
 -- n_sin_etapas: visitas sin ningún visit_detail.
--- n_solo_eventos_previos: visitas cuyas etapas son todas eventos previos (D2).
--- n_hospitalizadas: con al menos un 9201 que no es evento previo (D3).
+-- n_solo_eventos_previos: visitas cuyas etapas son todas eventos previos.
+-- n_hospitalizadas: con al menos un 9201 que no es evento previo (definición de hospitalizado).
 -- n_atencion: no hospitalizadas con fin de urgencias >= llegada + 5 min (aproximación por visita al grupo 2).
 WITH d AS (
     SELECT

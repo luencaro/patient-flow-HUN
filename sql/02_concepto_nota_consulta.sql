@@ -1,4 +1,4 @@
--- Conceptos cuyo nombre es 'Emergency department Consult note' (D11) y cuántos procedimientos los usan.
+-- Conceptos cuyo nombre es 'Emergency department Consult note' (variables hosp_previa_30d y nota_consulta_urg) y cuántos procedimientos los usan.
 -- Si no devuelve filas, nota_consulta_urg queda en FALSE para todos los episodios: revisar el nombre.
 SELECT
     c.concept_id                AS concepto,

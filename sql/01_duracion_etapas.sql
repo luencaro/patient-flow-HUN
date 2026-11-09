@@ -1,5 +1,5 @@
 -- Duración de cada etapa (visit_detail): sin fin, negativas, cero y percentiles en horas.
--- Incluye todas las etapas (también los eventos previos, D2); es un inventario de calidad.
+-- Incluye todas las etapas (también los eventos previos); es un inventario de calidad.
 WITH e AS (
     SELECT
         d.visit_detail_concept_id AS concepto_etapa,

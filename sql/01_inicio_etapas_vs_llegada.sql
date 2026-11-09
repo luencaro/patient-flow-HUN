@@ -1,5 +1,5 @@
 -- Minutos entre el inicio de cada etapa y la llegada (visit_start_datetime), en visitas de urgencias.
--- Valores negativos: la etapa empieza antes de la llegada. Evento previo (D2): más de 60 min antes.
+-- Valores negativos: la etapa empieza antes de la llegada. Evento previo: más de 60 min antes.
 WITH d AS (
     SELECT
         d.visit_detail_concept_id AS concepto_etapa,

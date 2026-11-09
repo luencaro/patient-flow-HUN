@@ -1,4 +1,4 @@
--- Personas por año de nacimiento y sexo (traducido con concept). Incluye los años imposibles (D8).
+-- Personas por año de nacimiento y sexo (traducido con concept). Incluye los años imposibles (edad al llegar).
 SELECT
     p.year_of_birth                                AS anio_nacimiento,
     COALESCE(c.concept_name, '(sin concepto)')     AS sexo,

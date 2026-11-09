@@ -164,3 +164,102 @@ def estadisticos_caja_desde_percentiles(fila) -> dict:
         "maximo": maximo,
         "n_atipicos": float(fila["n_atipicos"]) if "n_atipicos" in fila else np.nan,
     }
+
+
+# --- Comparación de dos grupos (afectados frente a no afectados) --------------------------------
+# Variables numéricas sin valor p de KS: la edad es discreta (años enteros) y tiene muchos empates.
+VARIABLES_SIN_P = ("edad",)
+
+
+def _es_duracion(nombre: str) -> bool:
+    """Variables de duración (en horas): su SMD se calcula sobre log1p(x)."""
+    nombre = str(nombre)
+    return nombre.endswith("_h") or "duracion" in nombre or nombre.startswith("los")
+
+
+def comparar_numerica(a, b, independientes: bool = True, log1p: bool = False, con_p: bool = True) -> pd.DataFrame:
+    """Compara una variable numérica entre dos grupos (``a`` = afectados, ``b`` = no afectados).
+
+    Devuelve una fila con: ``n_a``, ``n_b``, medianas y su diferencia, estadístico D y valor p de
+    Kolmogorov-Smirnov de dos muestras, distancia de Wasserstein y diferencia de medias
+    estandarizada (SMD = diferencia de medias / desviación estándar combinada). Los nulos se omiten.
+
+    - ``log1p``: la SMD se calcula sobre ``log1p(x)`` (para duraciones; los negativos se llevan a 0).
+    - ``independientes=False``: no se calcula el valor p (un grupo es subconjunto del otro).
+    - ``con_p=False``: no se calcula el valor p (por ejemplo, para la edad).
+    """
+    from scipy.stats import ks_2samp, wasserstein_distance  # import local: solo lo usan estas funciones
+
+    a = pd.to_numeric(pd.Series(a), errors="coerce").dropna().astype(float)
+    b = pd.to_numeric(pd.Series(b), errors="coerce").dropna().astype(float)
+    fila = {"n_a": len(a), "n_b": len(b), "mediana_a": np.nan, "mediana_b": np.nan, "dif_mediana": np.nan,
+            "ks_d": np.nan, "ks_p": np.nan, "wasserstein": np.nan, "smd": np.nan}
+    if len(a) and len(b):
+        ks = ks_2samp(a, b)
+        xa, xb = (np.log1p(a.clip(lower=0)), np.log1p(b.clip(lower=0))) if log1p else (a, b)
+        desviacion = np.sqrt((xa.var(ddof=1) + xb.var(ddof=1)) / 2) if len(a) > 1 and len(b) > 1 else np.nan
+        fila.update({
+            "mediana_a": a.median(),
+            "mediana_b": b.median(),
+            "dif_mediana": a.median() - b.median(),
+            "ks_d": float(ks.statistic),
+            "ks_p": float(ks.pvalue) if (independientes and con_p) else np.nan,
+            "wasserstein": float(wasserstein_distance(a, b)),
+            "smd": (xa.mean() - xb.mean()) / desviacion if desviacion and desviacion > 0 else np.nan,
+        })
+    return pd.DataFrame([fila])
+
+
+def comparar_categorica(a, b, independientes: bool = True) -> pd.DataFrame:
+    """Compara una variable categórica entre dos grupos (``a`` = afectados, ``b`` = no afectados).
+
+    Devuelve una fila con: ``n_a``, ``n_b``, valor p de chi-cuadrado, V de Cramér y la mayor
+    diferencia, en puntos porcentuales, entre la distribución de categorías de ``a`` y de ``b``.
+    Los nulos se tratan como una categoría más («sin dato»). Con ``independientes=False`` no se
+    calcula el valor p (un grupo es subconjunto del otro); la V de Cramér se reporta igual.
+    """
+    from scipy.stats import chi2_contingency  # import local: solo lo usan estas funciones
+
+    a = pd.Series(a).astype(object).where(pd.Series(a).notna(), "sin dato").astype(str)
+    b = pd.Series(b).astype(object).where(pd.Series(b).notna(), "sin dato").astype(str)
+    fila = {"n_a": len(a), "n_b": len(b), "chi2_p": np.nan, "v_cramer": np.nan, "max_dif_pp": np.nan}
+    if len(a) and len(b):
+        tabla = pd.DataFrame({"a": a.value_counts(), "b": b.value_counts()}).fillna(0)
+        pct = 100 * tabla / tabla.sum()
+        fila["max_dif_pp"] = float((pct["a"] - pct["b"]).abs().max())
+        if tabla.shape[0] > 1:
+            chi2, p, _, _ = chi2_contingency(tabla.to_numpy())
+            n = tabla.to_numpy().sum()
+            fila["chi2_p"] = float(p) if independientes else np.nan
+            fila["v_cramer"] = float(np.sqrt(chi2 / (n * (min(tabla.shape) - 1))))
+    return pd.DataFrame([fila])
+
+
+def resumen_impacto(df_a: pd.DataFrame, df_b: pd.DataFrame, variables, independientes: bool = True) -> pd.DataFrame:
+    """Aplica ``comparar_numerica`` o ``comparar_categorica`` a cada variable y une los resultados.
+
+    ``variables`` es una lista de nombres (el tipo se deduce: numérica si la columna es numérica
+    y no booleana) o un diccionario ``{variable: "numerica" | "duracion" | "categorica"}``. Las
+    variables de duración (``"duracion"``, o numéricas cuyo nombre termina en ``_h`` o empieza por
+    ``los``) usan ``log1p`` para la SMD. Las de ``VARIABLES_SIN_P`` (la edad) se reportan sin valor p.
+    Con ``independientes=False`` no se calcula ningún valor p. Una fila por variable, sin interpretación.
+    """
+    if not isinstance(variables, dict):
+        variables = {
+            v: "numerica" if pd.api.types.is_numeric_dtype(df_a[v]) and not pd.api.types.is_bool_dtype(df_a[v])
+            else "categorica"
+            for v in variables
+        }
+    filas = []
+    for variable, tipo in variables.items():
+        if tipo == "categorica":
+            fila = comparar_categorica(df_a[variable], df_b[variable], independientes=independientes)
+        else:
+            duracion = tipo == "duracion" or _es_duracion(variable)
+            fila = comparar_numerica(df_a[variable], df_b[variable], independientes=independientes,
+                                     log1p=duracion, con_p=variable not in VARIABLES_SIN_P)
+            tipo = "duracion" if duracion else tipo
+        filas.append(fila.assign(variable=variable, tipo=tipo))
+    columnas = ["variable", "tipo", "n_a", "n_b", "mediana_a", "mediana_b", "dif_mediana", "ks_d", "ks_p",
+                "wasserstein", "smd", "chi2_p", "v_cramer", "max_dif_pp"]
+    return pd.concat(filas, ignore_index=True).reindex(columns=columnas).set_index("variable")

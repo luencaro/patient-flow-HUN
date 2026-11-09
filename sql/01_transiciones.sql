@@ -1,4 +1,4 @@
--- Transiciones entre etapas consecutivas dentro de una visita de urgencias (sin eventos previos, D2).
+-- Transiciones entre etapas consecutivas dentro de una visita de urgencias (sin eventos previos).
 -- gap = inicio de la etapa siguiente - fin de la etapa actual, en minutos (negativo = traslape).
 WITH d AS (
     SELECT

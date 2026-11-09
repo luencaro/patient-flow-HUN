@@ -1,8 +1,8 @@
 -- Intervalo entre visitas 9203 consecutivas del mismo paciente (orden: llegada, visit_occurrence_id).
--- gap = llegada de la siguiente - fin de la anterior. Fin = máximo fin de las etapas que no son eventos previos (D2)
+-- gap = llegada de la siguiente - fin de la anterior. Fin = máximo fin de las etapas que no son eventos previos
 -- (o la llegada si no hay fin o es anterior a ella).
 -- duracion_previa: 'corta' si la visita anterior dura < 5 min, 'larga' si dura >= 5 min,
--- 'sin_fin' si no tiene etapas no previas con fin (incluye las visitas sin etapas, D10).
+-- 'sin_fin' si no tiene etapas no previas con fin (incluye las visitas sin etapas).
 WITH det AS (
     SELECT d.visit_occurrence_id, MAX(d.visit_detail_end_datetime) AS fin
     FROM {schema}.visit_detail d

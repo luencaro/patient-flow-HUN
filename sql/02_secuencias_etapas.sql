@@ -1,4 +1,4 @@
--- Las 20 secuencias de etapas más comunes en visitas de urgencias (sin eventos previos, D2).
+-- Las 20 secuencias de etapas más comunes en visitas de urgencias (sin eventos previos).
 -- Códigos: URG = 9203 (ingreso por urgencias), MOV = 3045729 (movimiento o etapa),
 -- PISO = 9201 (hospitalización en piso), AMB = 581479 (ingreso ambulatorio).
 -- Las repeticiones consecutivas de la misma etapa se colapsan (URG, MOV, MOV, PISO -> URG > MOV > PISO).

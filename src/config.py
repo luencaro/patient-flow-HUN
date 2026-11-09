@@ -35,31 +35,33 @@ CONCEPTO_PISO = 9201  # etapa: hospitalización en piso
 CONCEPTO_AMBULATORIO = 581479  # visita: consulta externa / etapa: ingreso ambulatorio (dura 0)
 
 # --- Construcción de episodios -----------------------------------------------
-# D2: una etapa que empieza más de 1 h antes de la llegada es un evento previo
+# Evento previo: una etapa que empieza más de 1 h antes de la llegada es un evento previo
 # asociado a la visita; no se usa para tiempos ni para definir hospitalización.
 TOLERANCIA_EVENTO_PREVIO = pd.Timedelta("1h")
-VENTANA_HOSP_PREVIA = pd.Timedelta("30D")  # D11, hosp_previa_30d
-UMBRAL_FUSION_MIN = 60  # D4
-UMBRALES_SENSIBILIDAD = [30, 60, 120]  # D4
-CONTACTO_BREVE = pd.Timedelta("5min")  # D6, grupo 1
+VENTANA_HOSP_PREVIA = pd.Timedelta("30D")  # variable hosp_previa_30d
+UMBRAL_FUSION_MIN = 60  # fusión de visitas en episodios
+UMBRALES_SENSIBILIDAD = [30, 60, 120]  # sensibilidad de la fusión de visitas
+CONTACTO_BREVE = pd.Timedelta("5min")  # grupos de análisis: contacto breve
 
-# D6: tres grupos, evaluados en este orden. Nombres, etiquetas y colores viven en src/estilo.py.
+# Grupos de análisis: tres grupos, evaluados en este orden. Nombres, etiquetas y colores viven en src/estilo.py.
 GRUPOS = estilo.ROLES
 GRUPOS_TIEMPOS = GRUPOS[1:]  # los tiempos solo se analizan en los grupos 2 y 3
 ETIQUETAS_GRUPO = estilo.ETIQUETA_ROL
 ETIQUETAS_CORTAS_GRUPO = estilo.ETIQUETA_CORTA_ROL
 
-# --- Edad (D8) -------------------------------------------------------------------
+# --- Edad al llegar -----------------------------------------------------------------
+# La edad es inválida (NaN) solo si year_of_birth < 1900 o si es negativa. Las edades mayores a
+# EDAD_MAYOR_REVISION se conservan y solo se marcan (regla edad_mayor_110).
 ANIO_NACIMIENTO_MINIMO = 1900
-EDAD_MAXIMA = 110
+EDAD_MAYOR_REVISION = 110
 GRUPOS_ETARIOS = ("pediatria", "adulto", "adulto_mayor")
 
 # --- Indicadores ---------------------------------------------------------------
 UMBRAL_OPERATIVO_H = 12  # umbral del hospital para permanencia en urgencias
 UMBRALES_LOS_H = [4, 6, 8, 12, 24, 72]
-VENTANAS_RECONSULTA = {"72h": pd.Timedelta("72h"), "7d": pd.Timedelta("7D")}  # D7
+VENTANAS_RECONSULTA = {"72h": pd.Timedelta("72h"), "7d": pd.Timedelta("7D")}  # reconsulta
 
-# D9: población de análisis. Desde abril de 2026 los datos están incompletos;
+# Población de análisis. Desde abril de 2026 los datos están incompletos;
 # los episodios posteriores se construyen (para reconsultas) pero no se analizan.
 FECHA_INICIO_ANALISIS = pd.Timestamp("2023-01-01 00:00:00")
 FECHA_CORTE_ANALISIS = pd.Timestamp("2026-03-31 23:59:59")
@@ -68,8 +70,9 @@ FECHA_CORTE_ANALISIS = pd.Timestamp("2026-03-31 23:59:59")
 MIN_CELDA = 10  # conteos menores se muestran como "<10"
 
 # --- Referencia de DBeaver (reglas anteriores, umbral de 60 min) -----------------
-# Sin visitas sin etapas y sin corte temporal. Con las reglas nuevas (D3, D9, D10)
-# los números cambian: la comparación del notebook 02 es informativa, no un error.
+# Sin visitas sin etapas y sin corte temporal. Con las reglas nuevas (definición de hospitalizado,
+# población de análisis y visitas sin etapas) los números cambian: la comparación del notebook 03
+# es informativa, no un error.
 REFERENCIA_SQL_60MIN = {
     "episodios": 440_202,
     "hosp_con_hora_piso": 36_382,
@@ -83,3 +86,166 @@ REFERENCIA_SQL_60MIN = {
 # Robustez (referencia de DBeaver): con 30, 60 y 120 min el % > 12 h de
 # hospitalizados cambia menos de este número de puntos.
 REFERENCIA_VARIACION_SENSIBILIDAD_PP = 0.1
+
+# --- Reglas de limpieza (pendientes de decisión del equipo) -----------------------------
+# Las reglas de registro decididas por el equipo se aplican en el notebook 03, a nivel de visita y
+# antes de la fusión en episodios. Las que siguen en "pendiente" se deciden en el notebook 05.
+# Ninguna acción se aplica mientras la regla esté en "pendiente". Para decidir una regla, el equipo cambia su
+# "accion" (y su "criterio", si la regla tiene más de una forma de detección) y vuelve a correr
+# desde el notebook 03. Las funciones que aplican las acciones están en src/limpieza.py.
+ACCIONES_REGISTRO = ("pendiente", "conservar", "marcar", "nan", "excluir")
+ACCIONES_EPISODIO = ("pendiente", "conservar", "excluir_de_tiempos", "excluir")
+
+# Reglas a nivel de visita. "columnas_nan": columnas que se ponen en NaN si la acción es "nan"
+# (lista vacía: la acción "nan" no aplica a esa regla). "criterios": formas de detección posibles.
+REGLAS_REGISTRO = {
+    "anio_nacimiento_imposible": {
+        "descripcion": "Año de nacimiento imposible",
+        "deteccion": "year_of_birth < 1900 (incluye el año 1)",
+        "columnas_nan": ["edad"],
+        "accion": "excluir",
+    },
+    "edad_negativa": {
+        "descripcion": "Edad negativa",
+        "deteccion": "año de llegada − year_of_birth < 0 (con year_of_birth ≥ 1900)",
+        "columnas_nan": ["edad"],
+        "accion": "excluir",
+    },
+    "edad_mayor_110": {
+        "descripcion": "Edad mayor a 110",
+        "deteccion": "año de llegada − year_of_birth > 110; la edad se conserva (no se pone en NaN)",
+        "columnas_nan": [],
+        "accion": "conservar",
+    },
+    "sexo_sin_dato": {
+        "descripcion": "Sexo sin dato",
+        "deteccion": "gender_concept_id = 0 o sin traducción (sexo distinto de FEMALE y MALE)",
+        "columnas_nan": [],
+        "accion": "conservar",
+    },
+    "etapas_duracion_0": {
+        "descripcion": "Etapas de duración 0",
+        "deteccion": "la visita tiene al menos una etapa no previa con fin igual al inicio",
+        "columnas_nan": [],
+        "accion": "conservar",
+    },
+    "etapas_duracion_extrema": {
+        "descripcion": "Etapas de duración extrema",
+        "deteccion": ("duración máxima de alguna etapa no previa (9203, 3045729 o 9201) por encima del límite "
+                      "de su tipo de etapa"),
+        "criterios": ("p99_9", "tukey_log"),
+        "criterio": "pendiente",
+        "columnas_nan": [],
+        "accion": "pendiente",
+    },
+    "fin_fraccion_segundo": {
+        "descripcion": "Fines de etapa con fracción de segundo",
+        "deteccion": "alguna etapa no previa tiene un fin con microsegundos distintos de 0",
+        "columnas_nan": [],
+        "accion": "pendiente",
+    },
+    "hosp_antes_de_llegada": {
+        "descripcion": "Hospitalización que empieza antes de la llegada",
+        "deteccion": "inicio_piso < llegada (dentro de la tolerancia de 1 h)",
+        "columnas_nan": [],
+        "accion": "excluir",
+    },
+    "visitas_sin_etapas": {
+        "descripcion": "Visitas sin etapas",
+        "deteccion": "la visita no tiene etapas no previas",
+        "columnas_nan": [],
+        "accion": "conservar",
+    },
+    "ingresos_9203_largos": {
+        "descripcion": "Ingresos por urgencias de duración larga",
+        "deteccion": "alguna etapa 9203 no previa de la visita dura más de 22 minutos",
+        "columnas_nan": [],
+        "accion": "conservar",
+    },
+    "etapas_por_visita_extremas": {
+        "descripcion": "Número extremo de etapas por visita",
+        "deteccion": "n_etapas por encima del límite",
+        "criterios": ("p99_9", "tukey_log"),
+        "criterio": "pendiente",
+        "columnas_nan": [],
+        "accion": "pendiente",
+    },
+    "paciente_muchas_visitas": {
+        "descripcion": "Pacientes con muchísimas visitas",
+        "deteccion": "visitas de urgencias del paciente en el año por encima del límite",
+        "criterios": ("p99_9", "tukey_log"),
+        "criterio": "pendiente",
+        "columnas_nan": [],
+        "accion": "pendiente",
+    },
+}
+
+# Reglas a nivel de episodio (decididas por el equipo en el notebook 05). "excluir_de_tiempos" deja
+# valido_para_tiempos = False en los episodios marcados.
+REGLAS_EPISODIO = {
+    "los_extremo": {
+        "descripcion": "LOS extremo",
+        "deteccion": "LOS por encima del percentil 99 o 99,9 de su grupo (atención en urgencias u hospitalizado)",
+        "criterios": ("p99", "p99_9"),
+        "accion": "conservar",
+    },
+    "fin_fraccion_segundo": {
+        "descripcion": "Fines con fracción de segundo",
+        "deteccion": "alguna visita del episodio tiene un fin de etapa con fracción de segundo",
+        "accion": "conservar",
+    },
+    "muchas_visitas_en_episodio": {
+        "descripcion": "Muchas visitas unidas en un episodio",
+        "deteccion": "n_visitas por encima del percentil 99,9",
+        "accion": "conservar",
+    },
+    "los_recortado": {
+        "descripcion": "LOS recortado a 0",
+        "deteccion": "hospitalizado con inicio_piso anterior a la llegada (LOS recortado a 0)",
+        "accion": "conservar",
+    },
+    "hosp_etapas_urg_despues_de_piso": {
+        "descripcion": "Hospitalizado con etapas de urgencias después de subir a piso",
+        "deteccion": "hospitalizado con fin_urg > inicio_piso",
+        "accion": "conservar",
+    },
+    "contacto_breve_por_visitas_unidas": {
+        "descripcion": "Contacto breve por visitas unidas",
+        "deteccion": ("contacto breve con LOS ≥ 5 min: visitas sin etapas unidas en un mismo episodio "
+                      "(el LOS va de la primera a la última llegada)"),
+        "accion": "conservar",
+    },
+    "hosp_sin_inicio_piso": {
+        "descripcion": "Hospitalizado sin inicio de piso",
+        "deteccion": "hospitalizado con inicio_piso vacío",
+        "accion": "conservar",
+    },
+    "atencion_menos_5min": {
+        "descripcion": "Atención en urgencias con LOS < 5 min",
+        "deteccion": "grupo de atención en urgencias con LOS menor a 5 minutos",
+        "accion": "conservar",
+    },
+    "fin_urg_antes_llegada": {
+        "descripcion": "Fin de urgencias antes de la llegada",
+        "deteccion": "fin_urg < llegada",
+        "accion": "conservar",
+    },
+    "paciente_muchos_episodios": {
+        "descripcion": "Pacientes con muchísimos episodios",
+        "deteccion": "episodios del paciente en el año por encima del percentil 99,9",
+        "accion": "conservar",
+    },
+    "edad_nan": {
+        "descripcion": "Edad en NaN",
+        "deteccion": "edad sin dato (sin year_of_birth; los años < 1900 y las edades negativas se excluyen en el notebook 03)",
+        "accion": "conservar",
+    },
+}
+
+# Ingresos por urgencias (etapa 9203) de duración larga.
+UMBRAL_INGRESO_LARGO_MIN = 22
+UMBRAL_INGRESO_MUY_LARGO_H = 24
+
+# Percentiles de detección de extremos.
+PERCENTILES_EXTREMOS = {"p99": 0.99, "p99_9": 0.999}
+FACTOR_TUKEY_LOG = 3.0  # Q3 + 3 × RIC sobre el logaritmo
