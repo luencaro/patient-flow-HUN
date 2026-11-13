@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="800.399384pt" height="368.39952pt" viewBox="0 0 800.399384 368.39952" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-08T14:46:04.806011</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 368.39952 
+L 800.399384 368.39952 
+L 800.399384 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 40.925781 330.198739 
+L 659.87087 330.198739 
+L 659.87087 49.207511 
+L 40.925781 49.207511 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path id="m796ef140bb" d="M 0 0 
+L 0 3.5 
+" style="stroke: #898781; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m796ef140bb" x="105.329792" y="330.198739" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="105.329792" y="344.796395" transform="rotate(-0 105.329792 344.796395)">1</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2">
+      <g>
+       <use xlink:href="#m796ef140bb" x="203.357206" y="330.198739" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="203.357206" y="344.796395" transform="rotate(-0 203.357206 344.796395)">2</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3">
+      <g>
+       <use xlink:href="#m796ef140bb" x="301.384619" y="330.198739" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="301.384619" y="344.796395" transform="rotate(-0 301.384619 344.796395)">3</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m796ef140bb" x="399.412033" y="330.198739" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="399.412033" y="344.796395" transform="rotate(-0 399.412033 344.796395)">4-5</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_5">
+      <g>
+       <use xlink:href="#m796ef140bb" x="497.439446" y="330.198739" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="497.439446" y="344.796395" transform="rotate(-0 497.439446 344.796395)">6-9</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m796ef140bb" x="595.46686" y="330.198739" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="595.46686" y="344.796395" transform="rotate(-0 595.46686 344.796395)">10+</text>
+     </g>
+    </g>
+    <g id="text_7">
+     <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="350.398326" y="358.797176" transform="rotate(-0 350.398326 358.797176)">Visitas por paciente</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_7">
+      <path d="M 40.925781 330.198739 
+L 659.87087 330.198739 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <defs>
+       <path id="m7853c3d35d" d="M 0 0 
+L -3.5 0 
+" style="stroke: #898781; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="330.198739" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="333.997567" transform="rotate(-0 33.925781 333.997567)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_9">
+      <path d="M 40.925781 292.430452 
+L 659.87087 292.430452 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="292.430452" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="296.22928" transform="rotate(-0 33.925781 296.22928)">5</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_11">
+      <path d="M 40.925781 254.662166 
+L 659.87087 254.662166 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="254.662166" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="258.460994" transform="rotate(-0 33.925781 258.460994)">10</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_13">
+      <path d="M 40.925781 216.893879 
+L 659.87087 216.893879 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="216.893879" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="220.692707" transform="rotate(-0 33.925781 220.692707)">15</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_15">
+      <path d="M 40.925781 179.125592 
+L 659.87087 179.125592 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="179.125592" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="182.92442" transform="rotate(-0 33.925781 182.92442)">20</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_17">
+      <path d="M 40.925781 141.357306 
+L 659.87087 141.357306 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="141.357306" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="145.156134" transform="rotate(-0 33.925781 145.156134)">25</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_19">
+      <path d="M 40.925781 103.589019 
+L 659.87087 103.589019 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20">
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="103.589019" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_14">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="107.387847" transform="rotate(-0 33.925781 107.387847)">30</text>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_21">
+      <path d="M 40.925781 65.820733 
+L 659.87087 65.820733 
+" clip-path="url(#p666cceef44)" style="fill: none; stroke: #ecebe5; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_22">
+      <g>
+       <use xlink:href="#m7853c3d35d" x="40.925781" y="65.820733" style="fill: #898781; stroke: #898781; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_15">
+      <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="33.925781" y="69.619561" transform="rotate(-0 33.925781 69.619561)">35</text>
+     </g>
+    </g>
+    <g id="text_16">
+     <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="14.798438" y="189.703125" transform="rotate(-90 14.798438 189.703125)">% de pacientes</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 69.059649 330.198739 
+L 104.349518 330.198739 
+L 104.349518 202.939472 
+L 69.059649 202.939472 
+z
+" clip-path="url(#p666cceef44)" style="fill: #159a8c"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 167.087063 330.198739 
+L 202.376931 330.198739 
+L 202.376931 108.640636 
+L 167.087063 108.640636 
+z
+" clip-path="url(#p666cceef44)" style="fill: #159a8c"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 265.114476 330.198739 
+L 300.404345 330.198739 
+L 300.404345 232.560442 
+L 265.114476 232.560442 
+z
+" clip-path="url(#p666cceef44)" style="fill: #159a8c"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 363.14189 330.198739 
+L 398.431759 330.198739 
+L 398.431759 208.052867 
+L 363.14189 208.052867 
+z
+" clip-path="url(#p666cceef44)" style="fill: #159a8c"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 461.169303 330.198739 
+L 496.459172 330.198739 
+L 496.459172 235.67661 
+L 461.169303 235.67661 
+z
+" clip-path="url(#p666cceef44)" style="fill: #159a8c"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 559.196717 330.198739 
+L 594.486586 330.198739 
+L 594.486586 237.956673 
+L 559.196717 237.956673 
+z
+" clip-path="url(#p666cceef44)" style="fill: #159a8c"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 106.310066 330.198739 
+L 141.599935 330.198739 
+L 141.599935 62.588046 
+L 106.310066 62.588046 
+z
+" clip-path="url(#p666cceef44)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 204.33748 330.198739 
+L 239.627349 330.198739 
+L 239.627349 80.125196 
+L 204.33748 80.125196 
+z
+" clip-path="url(#p666cceef44)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 302.364893 330.198739 
+L 337.654762 330.198739 
+L 337.654762 243.594966 
+L 302.364893 243.594966 
+z
+" clip-path="url(#p666cceef44)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 400.392307 330.198739 
+L 435.682176 330.198739 
+L 435.682176 241.882111 
+L 400.392307 241.882111 
+z
+" clip-path="url(#p666cceef44)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 498.41972 330.198739 
+L 533.709589 330.198739 
+L 533.709589 283.585551 
+L 498.41972 283.585551 
+z
+" clip-path="url(#p666cceef44)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 596.447134 330.198739 
+L 631.737003 330.198739 
+L 631.737003 314.050832 
+L 596.447134 314.050832 
+z
+" clip-path="url(#p666cceef44)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 40.925781 330.198739 
+L 40.925781 49.207511 
+" style="fill: none; stroke: #898781; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 40.925781 330.198739 
+L 659.87087 330.198739 
+" style="fill: none; stroke: #898781; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_17">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="86.704583" y="197.777363" transform="rotate(-0 86.704583 197.777363)">17 %</text>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="184.731997" y="103.478527" transform="rotate(-0 184.731997 103.478527)">29 %</text>
+   </g>
+   <g id="text_19">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="282.759411" y="227.398332" transform="rotate(-0 282.759411 227.398332)">13 %</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="380.786824" y="202.890758" transform="rotate(-0 380.786824 202.890758)">16 %</text>
+   </g>
+   <g id="text_21">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="478.814238" y="230.514501" transform="rotate(-0 478.814238 230.514501)">13 %</text>
+   </g>
+   <g id="text_22">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="576.841651" y="232.794564" transform="rotate(-0 576.841651 232.794564)">12 %</text>
+   </g>
+   <g id="text_23">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="123.955001" y="57.425937" transform="rotate(-0 123.955001 57.425937)">35 %</text>
+   </g>
+   <g id="text_24">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="221.982414" y="74.963086" transform="rotate(-0 221.982414 74.963086)">33 %</text>
+   </g>
+   <g id="text_25">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="320.009828" y="238.432856" transform="rotate(-0 320.009828 238.432856)">11 %</text>
+   </g>
+   <g id="text_26">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="418.037241" y="236.720001" transform="rotate(-0 418.037241 236.720001)">12 %</text>
+   </g>
+   <g id="text_27">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="516.064655" y="278.423441" transform="rotate(-0 516.064655 278.423441)">6 %</text>
+   </g>
+   <g id="text_28">
+    <text style="font-size: 9px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="614.092068" y="308.888723" transform="rotate(-0 614.092068 308.888723)">2 %</text>
+   </g>
+   <g id="legend_1">
+    <g id="patch_17">
+     <path d="M 675.060321 65.805949 
+L 695.060321 65.805949 
+L 695.060321 58.805949 
+L 675.060321 58.805949 
+z
+" style="fill: #159a8c"/>
+    </g>
+    <g id="text_29">
+     <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="703.060321" y="65.805949" transform="rotate(-0 703.060321 65.805949)">Todas las visitas</text>
+    </g>
+    <g id="patch_18">
+     <path d="M 675.060321 80.80673 
+L 695.060321 80.80673 
+L 695.060321 73.80673 
+L 675.060321 73.80673 
+z
+" style="fill: #2a78d6"/>
+    </g>
+    <g id="text_30">
+     <text style="font-size: 10px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="703.060321" y="80.80673" transform="rotate(-0 703.060321 80.80673)">Urgencias (9203)</text>
+    </g>
+   </g>
+  </g>
+  <g id="subtitulo_hallazgo">
+   <text style="font-size: 11px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="12.11976" y="38.564453" transform="rotate(-0 12.11976 38.564453)">% de pacientes según su número de visitas en todo el periodo</text>
+  </g>
+  <g id="titulo_hallazgo">
+   <text style="font-weight: 700; font-size: 15px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; fill: #0b0b0b" transform="translate(12.11976 20.099121)">Visitas por paciente</text>
+   <text style="font-weight: 700; font-size: 15px; font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif; fill: #0b0b0b" transform="translate(12.11976 38.102051)"/>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p666cceef44">
+   <rect x="40.925781" y="49.207511" width="618.945089" height="280.991228"/>
+  </clipPath>
+ </defs>
+</svg>
