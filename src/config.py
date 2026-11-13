@@ -87,13 +87,14 @@ REFERENCIA_SQL_60MIN = {
 # hospitalizados cambia menos de este número de puntos.
 REFERENCIA_VARIACION_SENSIBILIDAD_PP = 0.1
 
-# --- Reglas de limpieza (pendientes de decisión del equipo) -----------------------------
+# --- Reglas de limpieza (decididas por el equipo) ---------------------------------------
 # Las reglas de registro decididas por el equipo se aplican en el notebook 03, a nivel de visita y
-# antes de la fusión en episodios. Las que siguen en "pendiente" se deciden en el notebook 05.
+# antes de la fusión en episodios. Todas las reglas de registro
+# están decididas; las que están en "conservar" con varias formas de detección no necesitan "criterio".
 # Ninguna acción se aplica mientras la regla esté en "pendiente". Para decidir una regla, el equipo cambia su
 # "accion" (y su "criterio", si la regla tiene más de una forma de detección) y vuelve a correr
 # desde el notebook 03. Las funciones que aplican las acciones están en src/limpieza.py.
-ACCIONES_REGISTRO = ("pendiente", "conservar", "marcar", "nan", "excluir")
+ACCIONES_REGISTRO = ("pendiente", "conservar", "marcar", "nan", "excluir", "excluir_visita_sin_diagnostico")
 ACCIONES_EPISODIO = ("pendiente", "conservar", "excluir_de_tiempos", "excluir")
 
 # Reglas a nivel de visita. "columnas_nan": columnas que se ponen en NaN si la acción es "nan"
@@ -136,13 +137,13 @@ REGLAS_REGISTRO = {
         "criterios": ("p99_9", "tukey_log"),
         "criterio": "pendiente",
         "columnas_nan": [],
-        "accion": "pendiente",
+        "accion": "conservar",
     },
     "fin_fraccion_segundo": {
         "descripcion": "Fines de etapa con fracción de segundo",
         "deteccion": "alguna etapa no previa tiene un fin con microsegundos distintos de 0",
         "columnas_nan": [],
-        "accion": "pendiente",
+        "accion": "conservar",
     },
     "hosp_antes_de_llegada": {
         "descripcion": "Hospitalización que empieza antes de la llegada",
@@ -168,7 +169,7 @@ REGLAS_REGISTRO = {
         "criterios": ("p99_9", "tukey_log"),
         "criterio": "pendiente",
         "columnas_nan": [],
-        "accion": "pendiente",
+        "accion": "conservar",
     },
     "paciente_muchas_visitas": {
         "descripcion": "Pacientes con muchísimas visitas",
@@ -176,7 +177,17 @@ REGLAS_REGISTRO = {
         "criterios": ("p99_9", "tukey_log"),
         "criterio": "pendiente",
         "columnas_nan": [],
-        "accion": "pendiente",
+        "accion": "conservar",
+    },
+    "recorridos_identicos_otro_paciente": {
+        "descripcion": "Recorridos idénticos entre pacientes distintos",
+        "deteccion": ("par de visitas 9203 de 2 pacientes distintos con la misma llegada y las mismas etapas "
+                      "(tipo, inicio y fin idénticos); se marca la visita sin diagnósticos cuando la otra sí tiene "
+                      "(sql/03_recorridos_identicos_marcas.sql)"),
+        "columnas_nan": [],
+        # Solo en los pares donde exactamente una visita tiene diagnósticos se excluye la que no tiene; los
+        # pares donde ninguna o ambas tienen diagnósticos se conservan.
+        "accion": "excluir_visita_sin_diagnostico",
     },
 }
 
@@ -249,3 +260,28 @@ UMBRAL_INGRESO_MUY_LARGO_H = 24
 # Percentiles de detección de extremos.
 PERCENTILES_EXTREMOS = {"p99": 0.99, "p99_9": 0.999}
 FACTOR_TUKEY_LOG = 3.0  # Q3 + 3 × RIC sobre el logaritmo
+
+# --- Ocupación (notebook 06) -------------------------------------------------------------
+# Capacidad ACTUAL (2026) entregada por el hospital. Pudo ser distinta en años anteriores: por eso
+# el % sobre la capacidad es una medida complementaria y siempre se rotula «capacidad actual (2026)».
+CAPACIDAD_ACTUAL = {
+    "piso": {"pediatria": 8, "adultos": 64, "total": 72},
+    "cuidados_especiales": {"intermedia_adultos": 6, "intensiva_adultos": 14,
+                            "incubadora_intermedia_neonatal": 6, "incubadora_intensiva_neonatal": 3,
+                            "incubadora_basico_neonatal": 1, "total": 30},
+    "tpr": 4,
+    "observacion_urgencias": {"pediatria": 14, "adultos_hombres": 18, "adultos_mujeres": 26, "total": 58},
+}
+CAPACIDAD_PISO_CON_ESPECIALES = 102  # 72 de piso + 30 de cuidados especiales
+# Periodo de calentamiento: los datos empiezan el 2023-01-01 y no incluyen a los pacientes que ya
+# estaban en urgencias o en piso ese día (llegaron en 2022), así que el censo de enero de 2023 sale
+# artificialmente bajo (en piso puede durar semanas). Los censos se calculan desde
+# FECHA_INICIO_ANALISIS, pero tablas, gráficos, percentiles, saturación, deciles y exportaciones del
+# notebook 06 usan solo horas y episodios desde FECHA_INICIO_CENSO.
+FECHA_INICIO_CENSO = pd.Timestamp("2023-02-01")
+EDAD_PEDIATRIA = 18  # menores de esta edad: pediatría; el resto, adultos
+PERCENTIL_SATURACION = 90  # hora saturada: por encima de este percentil de su trimestre
+HORAS_DIA_SATURADO = 3  # día saturado: al menos estas horas saturadas
+# El censo 9201 supera sistemáticamente la capacidad informada; desactivado hasta confirmar con el hospital la
+# cobertura del concepto 9201 y la capacidad total.
+USAR_CAPACIDAD_PISO = False
