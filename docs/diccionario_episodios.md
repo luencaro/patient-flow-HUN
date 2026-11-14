@@ -53,3 +53,5 @@ Columnas de `data/interim/episodios_preliminar_60min.parquet`, generado por `not
 | `valido_para_tiempos` | booleano | El episodio entra a los cálculos de LOS. Lo crea `aplicar_reglas_episodio` según `REGLAS_EPISODIO`; con todas las reglas en «conservar», es True en todos. Solo en el dataset final | `aplicar_reglas_episodio` (notebook 05) | No |
 
 Si alguna regla de `REGLAS_REGISTRO` tuviera la acción `marcar`, el dataset tendría además la columna `marca_<regla>`.
+
+La regla `recorridos_identicos_otro_paciente` (acción `excluir_visita_sin_diagnostico`) no agrega columnas: antes de la fusión en episodios quita la visita sin diagnósticos de cada par de recorridos idénticos entre pacientes distintos donde solo una de las dos visitas tiene diagnósticos (`sql/03_recorridos_identicos_marcas.sql`). Las visitas quitadas, por regla, quedan en el `.json` de metadatos.

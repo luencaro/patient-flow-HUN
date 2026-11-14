@@ -60,13 +60,16 @@ def conteo_por_paciente_anio(tabla: pd.DataFrame) -> pd.Series:
 
 
 # --- Reglas de registro (nivel visita) ----------------------------------------------------------
-def detectar_registros(visitas: pd.DataFrame, limites_etapa: dict) -> tuple[pd.DataFrame, dict]:
+def detectar_registros(visitas: pd.DataFrame, limites_etapa: dict,
+                       recorridos: pd.DataFrame | None = None) -> tuple[pd.DataFrame, dict]:
     """Marcas booleanas por regla de ``REGLAS_REGISTRO`` a nivel de visita.
 
     ``visitas`` viene de ``preparar_visitas``. ``limites_etapa`` tiene, por tipo de etapa, los límites
     de duración calculados en SQL (``{9203: {"p99_9": h, "tukey_log": h}, 3045729: {...}, 9201: {...}}``);
     una visita queda marcada si la duración máxima de alguno de sus tipos de etapa (``max_dur_<tipo>_h``)
-    supera el límite de ese tipo. Devuelve (marcas, límites usados).
+    supera el límite de ese tipo. ``recorridos`` es la extracción ``03_recorridos_identicos_marcas``
+    (una fila por visita en un par de recorridos idénticos entre pacientes distintos); si no se da, la regla
+    ``recorridos_identicos_otro_paciente`` no marca ninguna visita. Devuelve (marcas, límites usados).
     """
     v = visitas
     marcas = pd.DataFrame(index=v.index)
@@ -87,6 +90,7 @@ def detectar_registros(visitas: pd.DataFrame, limites_etapa: dict) -> tuple[pd.D
     marcas["hosp_antes_de_llegada"] = v["inicio_piso"].lt(v["llegada"])
     marcas["visitas_sin_etapas"] = v["sin_etapas"].eq(True)
     marcas["ingresos_9203_largos"] = v["max_dur_9203_h"].gt(UMBRAL_INGRESO_LARGO_MIN / 60)
+    marcas["recorridos_identicos_otro_paciente"] = marca_recorridos_identicos(v, recorridos)
 
     usados = {"etapas_duracion_extrema": {int(c): dict(p) for c, p in limites_etapa.items()}}
     usados["etapas_por_visita_extremas"] = limites(v.loc[v["n_etapas"] > 0, "n_etapas"])
@@ -97,6 +101,39 @@ def detectar_registros(visitas: pd.DataFrame, limites_etapa: dict) -> tuple[pd.D
     for criterio, limite in usados["paciente_muchas_visitas"].items():
         marcas[f"paciente_muchas_visitas__{criterio}"] = visitas_paciente_anio.gt(limite)
     return marcas, usados
+
+
+def visitas_a_excluir_por_recorrido(recorridos: pd.DataFrame) -> pd.Series:
+    """Por visita de ``03_recorridos_identicos_marcas``: ``True`` si es la visita sin diagnósticos de un par
+    donde exactamente una de las dos visitas tiene diagnósticos. Los pares donde ninguna o ambas tienen
+    diagnósticos se conservan."""
+    r = recorridos.copy()
+    r["tiene_diagnostico"] = r["tiene_diagnostico"].eq(True)
+    con_diagnostico = r.groupby("grupo")["tiene_diagnostico"].transform("sum")
+    return (con_diagnostico.eq(1) & ~r["tiene_diagnostico"]).set_axis(r["visit_occurrence_id"].astype("int64"))
+
+
+def marca_recorridos_identicos(visitas: pd.DataFrame, recorridos: pd.DataFrame | None) -> pd.Series:
+    """Marca de la regla ``recorridos_identicos_otro_paciente`` alineada con ``visitas``."""
+    if recorridos is None or recorridos.empty:
+        return pd.Series(False, index=visitas.index)
+    excluir = visitas_a_excluir_por_recorrido(recorridos)
+    ids = set(excluir.index[excluir.to_numpy()])
+    return visitas["visit_occurrence_id"].astype("int64").isin(ids)
+
+
+def resumen_recorridos_identicos(recorridos: pd.DataFrame) -> pd.DataFrame:
+    """Pares de recorridos idénticos entre pacientes distintos, visitas en pares, pares donde solo una
+    visita tiene diagnósticos y visitas que se excluyen. Solo conteos (columna ``n``)."""
+    tiene = recorridos["tiene_diagnostico"].eq(True)
+    con_diagnostico = tiene.groupby(recorridos["grupo"]).sum()
+    filas = {
+        "pares de pacientes distintos": recorridos["grupo"].nunique(),
+        "visitas en pares": len(recorridos),
+        "pares donde solo una visita tiene diagnósticos": int(con_diagnostico.eq(1).sum()),
+        "visitas que se excluyen": int(visitas_a_excluir_por_recorrido(recorridos).sum()),
+    }
+    return pd.DataFrame({"n": pd.Series(filas, dtype="int64")}).rename_axis("medida")
 
 
 def _columna_marca(marcas: pd.DataFrame, clave: str, regla: dict) -> pd.Series:
@@ -118,6 +155,8 @@ def aplicar_reglas_registro(visitas: pd.DataFrame, marcas: pd.DataFrame, reglas:
     - ``marcar``: agrega la columna booleana ``marca_<regla>``.
     - ``nan``: pone en NaN las ``columnas_nan`` de la regla en las visitas marcadas.
     - ``excluir``: quita las visitas marcadas. Se aplica a nivel de visita, antes de la fusión.
+    - ``excluir_visita_sin_diagnostico``: igual que ``excluir``; la marca ya señala solo la visita sin
+      diagnósticos de cada par (ver ``marca_recorridos_identicos``).
 
     El reporte tiene, por regla, la acción, las visitas marcadas y, para las que excluyen, las visitas
     quitadas y los episodios que desaparecen o cambian. Las exclusiones se cuentan en el orden de
@@ -134,8 +173,9 @@ def aplicar_reglas_registro(visitas: pd.DataFrame, marcas: pd.DataFrame, reglas:
             raise ValueError(f"Acción desconocida '{accion}' en la regla '{clave}'. Opciones: {ACCIONES_REGISTRO}.")
         fila = {"regla": clave, "accion": accion, "n_marcadas": np.nan, "n_visitas_quitadas": 0,
                 "n_episodios_quitados": 0, "n_episodios_modificados": 0}
-        if accion == "pendiente" and "criterios" in regla:
-            filas.append(fila)  # sin criterio elegido no hay una marca única que contar
+        if accion in ("pendiente", "conservar") and "criterios" in regla \
+                and regla.get("criterio") not in regla["criterios"]:
+            filas.append(fila)  # sin criterio elegido no hay una marca única que contar (y no se cambia nada)
             continue
         marca = _columna_marca(marcas, clave, regla).reindex(visitas.index, fill_value=False)
         fila["n_marcadas"] = int(marca.sum())
@@ -145,7 +185,7 @@ def aplicar_reglas_registro(visitas: pd.DataFrame, marcas: pd.DataFrame, reglas:
             if not regla.get("columnas_nan"):
                 raise ValueError(f"La regla '{clave}' no admite la acción 'nan' (no tiene columnas_nan).")
             v.loc[marca.reindex(v.index), regla["columnas_nan"]] = np.nan
-        elif accion == "excluir":
+        elif accion in ("excluir", "excluir_visita_sin_diagnostico"):
             quitar = marca & restantes
             fila["n_visitas_quitadas"] = int(quitar.sum())
             if episodio is not None:

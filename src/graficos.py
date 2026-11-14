@@ -537,12 +537,13 @@ def formato_eje_anios(eje) -> None:
     eje.set_major_formatter(FuncFormatter(lambda x, _pos: f"{x:.0f}"))
 
 
-def formato_eje_fechas(eje) -> None:
-    """Ticks mensuales, bimestrales, trimestrales, semestrales o anuales (según el rango),
-    con formato «ene 2024» y rotados 45°."""
+def formato_eje_fechas(eje, paso: int | None = None) -> None:
+    """Ticks mensuales, bimestrales, trimestrales, semestrales o anuales (según el rango, o cada ``paso``
+    meses si se da), con formato «ene 2024» y rotados 45°. Con ``paso``, llamar antes de ``guardar_figura``
+    (el formato automático respeta el que se fija aquí)."""
     vmin, vmax = eje.get_view_interval()
     meses = max(1.0, (vmax - vmin) / 30.44)
-    paso = next((p for p in (1, 2, 3, 6, 12, 24) if meses / p <= 16), 24)
+    paso = paso or next((p for p in (1, 2, 3, 6, 12, 24) if meses / p <= 16), 24)
     if paso >= 12:
         eje.set_major_locator(mdates.YearLocator(paso // 12))
     else:
