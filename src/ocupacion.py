@@ -77,15 +77,18 @@ def fusionar_intervalos(df: pd.DataFrame, por: str = "person_id", inicio: str = 
     return d.groupby("_isla", sort=True).agg(agregaciones).reset_index(drop=True)
 
 
-def intervalos_urgencias(episodios: pd.DataFrame, con_atencion: bool = False) -> pd.DataFrame:
+def intervalos_urgencias(episodios: pd.DataFrame, con_atencion: bool = False,
+                         solo_poblacion: bool = True) -> pd.DataFrame:
     """Intervalos de ocupación de urgencias desde los episodios de la población válidos para tiempos.
 
     Cada episodio ocupa urgencias desde ``llegada`` hasta su salida: ``inicio_piso`` si está
     hospitalizado, ``fin_urg`` si no. Las salidas anteriores a la llegada se llevan a la llegada.
     Con ``con_atencion``, solo atención en urgencias y hospitalizados. Los hospitalizados sin
     ``inicio_piso`` no tienen salida y quedan fuera.
+    Con ``solo_poblacion=False`` se usan todos los episodios del dataset (también los que no entran a la
+    población de análisis), por ejemplo para contar a los pacientes presentes a la llegada de otro.
     """
-    e = episodios[episodios["en_poblacion"]]
+    e = episodios[episodios["en_poblacion"]] if solo_poblacion else episodios
     if "valido_para_tiempos" in e.columns:
         e = e[e["valido_para_tiempos"].astype(bool)]
     if con_atencion:
@@ -125,6 +128,39 @@ def sin_calentamiento(datos, columna: str | None = None, desde=FECHA_INICIO_CENS
     if columna is None:
         return datos[datos.index >= desde]
     return datos[datos[columna] >= desde]
+
+
+def censo_en_instantes(inicios, fines, instantes) -> np.ndarray:
+    """Número de intervalos activos en cada instante exacto (``inicio < t`` y ``fin > t``), con
+    ``np.searchsorted`` sobre inicios y fines ordenados.
+
+    Un intervalo que empieza justo en ``t`` no cuenta, así que un episodio no se cuenta a sí mismo en su
+    propia llegada. Los intervalos de duración 0 nunca están activos y se descartan antes de contar.
+    """
+    ini = pd.to_datetime(pd.Series(inicios)).reset_index(drop=True)
+    fin = pd.to_datetime(pd.Series(fines)).reset_index(drop=True)
+    validos = ini.notna() & fin.notna() & (fin > ini)
+    ini = np.sort(ini[validos].to_numpy(dtype="datetime64[ns]"))
+    fin = np.sort(fin[validos].to_numpy(dtype="datetime64[ns]"))
+    t = pd.to_datetime(pd.Series(instantes)).to_numpy(dtype="datetime64[ns]")
+    # inicio < t menos fin <= t (con fin > inicio, todo fin <= t tiene también inicio < t).
+    activos = (np.searchsorted(ini, t, side="left") - np.searchsorted(fin, t, side="right")).astype(float)
+    activos[np.isnat(t)] = np.nan
+    return activos
+
+
+def percentil_en_censo(censo: pd.Series, valores, instantes, periodo: str = "Q") -> np.ndarray:
+    """Percentil (0–100) de cada valor frente al censo horario de su periodo (por defecto, el trimestre
+    del instante): % de horas del periodo con un censo menor o igual. Misma definición que
+    ``percentil_en_periodo``; NaN si el periodo no tiene horas en ``censo``."""
+    valores = np.asarray(valores, dtype=float)
+    claves = pd.DatetimeIndex(pd.to_datetime(pd.Series(instantes))).to_period(periodo)
+    resultado = np.full(len(valores), np.nan)
+    for clave, horas in censo.groupby(censo.index.to_period(periodo)):
+        ordenado = np.sort(horas.to_numpy(dtype=float))
+        filas = np.flatnonzero((claves == clave) & ~np.isnan(valores))
+        resultado[filas] = 100 * np.searchsorted(ordenado, valores[filas], side="right") / len(ordenado)
+    return resultado
 
 
 def censos_por_edad(intervalos: pd.DataFrame, desde, hasta) -> pd.DataFrame:

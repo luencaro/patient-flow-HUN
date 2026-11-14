@@ -285,3 +285,61 @@ HORAS_DIA_SATURADO = 3  # día saturado: al menos estas horas saturadas
 # El censo 9201 supera sistemáticamente la capacidad informada; desactivado hasta confirmar con el hospital la
 # cobertura del concepto 9201 y la capacidad total.
 USAR_CAPACIDAD_PISO = False
+
+# --- Características por episodio (notebook 07) ---
+# Toda característica se calcula con información anterior a la llegada del episodio.
+# Grupos de edad (años cumplidos aproximados: año de llegada − year_of_birth): {etiqueta: (desde, hasta)},
+# con "desde" incluido y "hasta" excluido.
+GRUPOS_EDAD = {
+    "<1": (0, 1),
+    "1-4": (1, 5),
+    "5-17": (5, 18),
+    "18-44": (18, 45),
+    "45-64": (45, 65),
+    "65-79": (65, 80),
+    "80+": (80, float("inf")),
+}
+VENTANAS_HISTORIA_D = (30, 365)  # días previos para contar episodios anteriores del mismo paciente
+VENTANA_LOS_RECIENTE_H = 8  # horas previas a la llegada para el LOS de los episodios que salieron de urgencias
+# Rol de cada columna de data/interim/episodios_caracteristicas.parquet (notebook 07), para filtrar sin
+# escribir nombres a mano: "predictor" (se conoce a la llegada), "estrato" (para estratificar, no predictor),
+# "descriptiva" (se conoce después de la llegada; solo para describir), "control" (marca de calidad de los
+# datos, no predictor) o "desenlace" (prefijo y_).
+# episodio_id, llegada y valido_para_tiempos (identificador, fecha y filtro) no tienen rol.
+ROLES_CARACTERISTICAS = {
+    "grupo": "estrato",
+    "sexo": "predictor",
+    "hosp_previa_30d": "predictor",
+    "nota_consulta_urg": "descriptiva",
+    "n_visitas": "descriptiva",
+    "hora": "predictor",
+    "dia_semana": "predictor",
+    "mes": "predictor",
+    "anio": "predictor",
+    "fin_de_semana": "predictor",
+    "festivo": "predictor",
+    "franja": "predictor",
+    "edad_llegada": "predictor",
+    "pediatria": "predictor",
+    "grupo_edad": "predictor",
+    "n_episodios_previos_30d": "predictor",
+    "historia_completa_30d": "control",
+    "n_episodios_previos_365d": "predictor",
+    "historia_completa_365d": "control",
+    "urg_atencion_presentes_llegada": "predictor",
+    "urg_atencion_presentes_llegada_pct_trimestre": "predictor",
+    "censo_calentamiento": "control",
+    "piso_censo_llegada": "predictor",
+    "piso_censo_llegada_pct_trimestre": "predictor",
+    "piso_grupo_censo_llegada": "predictor",
+    "piso_grupo_censo_llegada_pct_trimestre": "predictor",
+    "los_reciente_promedio_h": "predictor",
+    "los_reciente_mediana_h": "predictor",
+    "n_salidas_recientes": "predictor",
+    "y_los_h": "desenlace",
+    "y_los_mas_12h": "desenlace",
+    "y_reconsulta_72h": "desenlace",
+    "y_reconsulta_72h_sin_censura": "desenlace",
+    "y_reconsulta_7d": "desenlace",
+    "y_reconsulta_7d_sin_censura": "desenlace",
+}
